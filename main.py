@@ -1,4 +1,5 @@
 import torch
+from engine import Bigram
 
 #read file and get names
 names = open('names.txt', 'r').read().splitlines()
@@ -10,29 +11,30 @@ stoi['.'] = 0
 
 itos = {i:s for s,i in stoi.items()}
 
-#populate bigram model
-N = torch.zeros((27, 27), dtype=torch.int32)
+#generate xs and ys
+xs = []
+ys = []
 for name in names:
     word = '.' + name + '.'
     for c1,c2 in zip(word, word[1:]):
         i1 = stoi[c1]
         i2 = stoi[c2]
-        N[i1, i2] += 1
+        xs.append(i1)
+        ys.append(i2)
         
 #set deterministic generator
 g = torch.Generator().manual_seed(2147483647)
 
-#precalculate probabilities
-P = (N+1).float()
-P = P / P.sum(1, keepdim=True)
+#create bigram model and train it
+m = Bigram(len(chars) + 1, 1)
+m.train(xs, ys)
 
 #sample from the model
 for _ in range(5):
     outs = []
     i = 0
     while True:
-        p = P[i]
-        i = torch.multinomial(p, 1, replacement=True, generator=g).item()
+        i = m.sample(i, g).item()
         outs.append(itos[i])
         if i == 0:
             break
