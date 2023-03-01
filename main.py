@@ -23,7 +23,7 @@ for name in names:
 g = torch.Generator().manual_seed(2147483647)
 
 #precalculate probabilities
-P = N.float()
+P = (N+1).float()
 P = P / P.sum(1, keepdim=True)
 
 #sample from the model
