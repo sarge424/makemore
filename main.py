@@ -55,6 +55,7 @@ for name in names:
         ll += logprob
         n += 1
         
+#found to be 2.454094171524048
 print(f'-loglikelihood={-ll/n}')
         
         
