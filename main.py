@@ -21,9 +21,6 @@ for name in names:
         i2 = stoi[c2]
         xs.append(i1)
         ys.append(i2)
-        
-#set deterministic generator
-g = torch.Generator().manual_seed(2147483647)
 
 #create bigram model and train it
 m = Bigram(len(chars) + 1, bias=1, seed=2147483647)
@@ -34,7 +31,7 @@ for _ in range(5):
     outs = []
     i = 0
     while True:
-        i = m(i, g).item()
+        i = m(i).item()
         outs.append(itos[i])
         if i == 0:
             break

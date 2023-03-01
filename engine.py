@@ -17,8 +17,8 @@ class Bigram:
         self.P = (self.N + self.bias).float()
         self.P = self.P / self.P.sum(1, keepdim=True)
         
-    def __call__(self, x, g):
-        return torch.multinomial(self.P[x], 1, replacement=True, generator=g)
+    def __call__(self, x):
+        return torch.multinomial(self.P[x], 1, replacement=True, generator=self.g)
     
     #calculate log likelihood - the loss function over training set
     #training set examples are correct, so ideally all the training examples
