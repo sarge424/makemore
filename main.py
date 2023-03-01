@@ -22,13 +22,16 @@ for name in names:
 #set deterministic generator
 g = torch.Generator().manual_seed(2147483647)
 
-#generate words
+#precalculate probabilities
+P = N.float()
+P = P / P.sum(1, keepdim=True)
+
+#sample from the model
 for _ in range(20):
     outs = []
     i = 0
     while True:
-        p = N[i].float()
-        p = p / p.sum()
+        p = P[i]
         i = torch.multinomial(p, 1, replacement=True, generator=g).item()
         outs.append(itos[i])
         if i == 0:
