@@ -15,9 +15,9 @@ stoi['.'] = 0
 itos = {i:s for s,i in stoi.items()}
 
 #hyperparams
-block_size = 6
+block_size = 3
 dimensions = 10
-hidden_layer_size = 600
+hidden_layer_size = 200
 minibatch_size = 32
 
 #create training sets
