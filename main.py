@@ -50,11 +50,17 @@ g = torch.Generator().manual_seed(2147483647)
 
 C = torch.randn((27, dimensions),                              generator=g)
 W1 = torch.randn((block_size * dimensions, hidden_layer_size), generator=g) * 0.1
-b1 = torch.randn(hidden_layer_size,                            generator=g) * 0.01
+#b1 = torch.randn(hidden_layer_size,                            generator=g) * 0.01
 W2 = torch.randn((hidden_layer_size, 27),                      generator=g) * 0.01
 b2 = torch.randn(27,                                           generator=g) * 0
 
-parameters = [C, W1, b1, W2, b2]
+bngain = torch.ones((1, hidden_layer_size))
+bnbias = torch.zeros((1, hidden_layer_size))
+
+bnmean_running = torch.zeros((1, hidden_layer_size))
+bnstd_running = torch.ones((1, hidden_layer_size))
+
+parameters = [C, W1, W2, b2, bngain, bnbias]
 for p in parameters:
     p.requires_grad = True
 
@@ -70,9 +76,19 @@ for i in range(200000):
     
     #forward pass
     emb = C[Xtr[bi]]
-    h = torch.tanh(emb.view(-1, block_size * dimensions) @ W1 + b1)
+    hpre = emb.view(-1, block_size * dimensions) @ W1
+    #batch normalize
+    bnmeani = hpre.mean(0, keepdim=True)
+    bnstdi = hpre.std(0, keepdim=True)
+    hbn = (hpre - bnmeani) / (bnstdi + 1e-5)    
+    #continue
+    h = torch.tanh(bngain * hbn + bnbias)
     logits = h @ W2 + b2
     loss = F.cross_entropy(logits, Ytr[bi])
+
+    with torch.no_grad():
+        bnmean_running = bnmean_running * 0.999 + bnmeani * 0.001
+        bnstd_running = bnstd_running * 0.999 + bnstdi * 0.001
 
     #backward pass
     for p in parameters:
@@ -98,14 +114,21 @@ for i in range(200000):
 
 #calculate final loss
 emb = C[Xtr]
-h = torch.tanh(emb.view(-1, block_size * dimensions) @ W1 + b1)
+hpre = emb.view(-1, block_size * dimensions) @ W1
+#batch normalize
+hbn = (hpre - bnmean_running) / (bnstd_running + 1e-5)
+#continue
+h = torch.tanh(bngain * hbn + bnbias)
 logits = h @ W2 + b2
 loss = F.cross_entropy(logits, Ytr)
 print('training set loss:', loss.item())
 
 emb = C[Xtest]
-hpre = emb.view(-1, block_size * dimensions) @ W1 + b1
-h = torch.tanh(hpre)
+hpre = emb.view(-1, block_size * dimensions) @ W1
+#batch normalize
+hbn = (hpre - bnmean_running) / (bnstd_running + 1e-5)
+#continue
+h = torch.tanh(bngain * hbn + bnbias)
 logits = h @ W2 + b2
 loss = F.cross_entropy(logits, Ytest)
 print('test set loss:', loss.item())
@@ -117,7 +140,11 @@ for _ in range(20):
     i = 0
     while True:
         emb = C[torch.tensor(context)]
-        h = torch.tanh(emb.view(1, -1) @ W1 + b1)
+        hpre = emb.view(-1, block_size * dimensions) @ W1
+        #batch normalize
+        hbn = (hpre - bnmean_running) / (bnstd_running + 1e-5)
+        #continue
+        h = torch.tanh(bngain * hbn + bnbias)
         logits = h @ W2 + b2
         prob = F.softmax(logits, dim=1)
         i = torch.multinomial(prob, 1, generator=g).item()
@@ -133,9 +160,24 @@ plt.show()
 
 '''
 Some nice generated names:
--omanneella.
--azleyah.
--aster.
--naryan.
--amon.
+orali.
+reglely.
+kir.
+abellys.
+eluna.
+szylen.
+silyn.
+den.
+emmalaserrlee.
+leon.
+marrionty.
+cetricollen.
+nix.
+fairah.
+amarquawabie.
+tivin.
+stensyn.
+fyth.
+aliza.
+joola.
 '''
