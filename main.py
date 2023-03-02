@@ -48,11 +48,11 @@ Xtest, Ytest = create_dataset(names[n2:], block_size)
 #init parameters
 g = torch.Generator().manual_seed(2147483647)
 
-C = torch.randn((27, dimensions), generator=g)
-W1 = torch.randn((block_size * dimensions, hidden_layer_size), generator=g)
-b1 = torch.randn(hidden_layer_size, generator=g)
-W2 = torch.randn((hidden_layer_size, 27), generator=g)
-b2 = torch.randn(27, generator=g)
+C = torch.randn((27, dimensions),                              generator=g)
+W1 = torch.randn((block_size * dimensions, hidden_layer_size), generator=g) * 0.1
+b1 = torch.randn(hidden_layer_size,                            generator=g) * 0.01
+W2 = torch.randn((hidden_layer_size, 27),                      generator=g) * 0.01
+b2 = torch.randn(27,                                           generator=g) * 0
 
 parameters = [C, W1, b1, W2, b2]
 for p in parameters:
@@ -81,7 +81,7 @@ for i in range(200000):
     
     #descend
     lr = 0.1
-    if i > 75000:
+    if i > 100000:
         lr = 0.01
         
     for p in parameters:
@@ -94,6 +94,7 @@ for i in range(200000):
         
     if i % 5000 == 0:
         print('.', i, '->',loss.item())
+        
 
 #calculate final loss
 emb = C[Xtr]
@@ -103,7 +104,8 @@ loss = F.cross_entropy(logits, Ytr)
 print('training set loss:', loss.item())
 
 emb = C[Xtest]
-h = torch.tanh(emb.view(-1, block_size * dimensions) @ W1 + b1)
+hpre = emb.view(-1, block_size * dimensions) @ W1 + b1
+h = torch.tanh(hpre)
 logits = h @ W2 + b2
 loss = F.cross_entropy(logits, Ytest)
 print('test set loss:', loss.item())
